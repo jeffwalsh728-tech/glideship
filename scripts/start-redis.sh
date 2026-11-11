@@ -14,6 +14,11 @@
 # starting Redis you MUST restart the backend for the scan worker to pick it up.
 set -euo pipefail
 
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*) ;;
+  *) exit 0 ;;
+esac
+
 REDIS_HOME="${REDIS_HOME:-C:/Users/Admin/dev/tools/redis8/Redis-8.8.0-Windows-x64-msys2}"
 PORT="${REDIS_PORT:-6379}"
 
@@ -34,12 +39,12 @@ if [ ! -x "$REDIS_HOME/redis-server.exe" ]; then
 fi
 
 echo "[start-redis] Launching Redis 8 on 127.0.0.1:$PORT and [::1]:$PORT ..."
-cd "$REDIS_HOME"
+cd -- "$REDIS_HOME"
 # --save ""/--appendonly no: ephemeral cache+queue store, no disk persistence.
 nohup ./redis-server.exe --port "$PORT" --bind "127.0.0.1 ::1" \
-  --save "" --appendonly no --protected-mode no > "$REDIS_HOME/redis.log" 2>&1 &
+  --save "" --appendonly no --protected-mode no > redis.log 2>&1 &
 sleep 2
-if "$REDIS_HOME/redis-cli.exe" -p "$PORT" ping >/dev/null 2>&1; then
+if ./redis-cli.exe -p "$PORT" ping >/dev/null 2>&1; then
   echo "[start-redis] Redis is up (PING ok). Now restart the backend so it reconnects."
 else
   echo "[start-redis] Redis did not respond — check $REDIS_HOME/redis.log" >&2
